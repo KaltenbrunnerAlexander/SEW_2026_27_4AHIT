@@ -1,0 +1,108 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace _01_Figurliste
+{
+
+    interface IFigur
+    {
+        string Beschreibung { get; }
+        double BerechneOberflaeche();
+        double BerechneVolumen();
+    }
+
+    abstract class Figur : IFigur
+    {
+        public Figur(string beschreibung)
+        {
+            Beschreibung = beschreibung;
+        }
+
+        public string Beschreibung { get; }
+
+        public abstract double BerechneOberflaeche();
+        public abstract double BerechneVolumen();
+    }
+
+    class Kugel : Figur
+    {
+        public double Radius { get; }
+
+        public Kugel(string beschreibung, double radius) : base(beschreibung)
+        {
+            Radius = radius;
+        }
+
+        public override double BerechneOberflaeche()
+        {
+            return 4.0 * Math.PI * Math.Pow(Radius, 2);
+        }
+
+        public override double BerechneVolumen()
+        {
+            return (4.0 * Math.PI * Math.Pow(Radius, 3)) / 3.0;
+        }
+    }
+
+    class Wuerfel : Figur
+    {
+        public double Seitenlaenge { get; }
+
+        public Wuerfel(string beschreibung, double a) : base(beschreibung)
+        {
+            Seitenlaenge = a;
+        }
+
+        public override double BerechneOberflaeche()
+        {
+            return 6.0 * Math.Pow(Seitenlaenge, 2);
+        }
+
+        public override double BerechneVolumen()
+        {
+            return Math.Pow(Seitenlaenge, 3);
+        }
+    }
+
+    class FigurListe : List<IFigur>
+    {
+        public void AusgabeAllerFiguren()
+        {
+            foreach (IFigur figur in this)
+            {
+                Console.WriteLine($"{figur.Beschreibung} | Oberflaeche: {figur.BerechneOberflaeche():F2} | Volumen: {figur.BerechneVolumen():F2}");
+            }
+        }
+        public void Remove(int index) {}
+
+    }
+
+
+    internal class Program
+    {
+
+        static void Main(string[] args)
+        {
+
+            FigurListe liste = new FigurListe();
+
+            Kugel k1 = new Kugel("K1", 10);
+            liste.Add(new Kugel("K2", 8));
+            liste.Add(new Wuerfel("W1", 3));
+            liste.Add(new Wuerfel("W2", 4));
+            liste.Add(k1);
+            liste.Remove(1);
+            liste.Remove(k1);
+            Console.WriteLine($"Anzahl der Elemente in der Liste: {liste.Count}");
+
+            liste.AusgabeAllerFiguren(); // Gibt alle Figuren mit Bezeichnung, Oberfläche und Volumen auf der Konsole aus
+
+            Console.ReadKey();
+        }
+
+    }
+}
