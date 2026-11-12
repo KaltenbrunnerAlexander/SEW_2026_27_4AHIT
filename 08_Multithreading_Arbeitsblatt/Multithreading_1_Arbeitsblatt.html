@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multithreading 1 – Grundlagen und erste Threads | Arbeitsblatt</title>
+<style>
+  :root{--blue:#14509F;--acc:#2F5496;--orange:#E36C09;--cream:#FFF3D6;--gold:#E0AA2E;--goldd:#B8860B;--lblue:#EAF0FB;--gray:#F2F2F2;--txt:#1A1A1A;--muted:#6B6B6B;--ok:#2E7D32;--okbg:#E8F5E9;--bad:#C62828;--badbg:#FDECEA}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Calibri,"Segoe UI",Arial,sans-serif;color:var(--txt);background:#fff;line-height:1.5;font-size:17px}
+  header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #e3e3e3;padding:10px 20px}
+  .hwrap{max-width:860px;margin:0 auto}
+  .htop{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .htop b{font-size:1.05rem}.htop span{color:var(--muted);font-size:.85rem}
+  .bar{height:8px;background:var(--gray);border-radius:5px;margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s}
+  main{max-width:860px;margin:0 auto;padding:24px 20px 80px}
+  h1{font-size:1.9rem;margin:.2em 0 .1em}
+  .lead{color:var(--blue);margin:0 0 1.2em}
+  .intro{background:var(--lblue);border:1px solid var(--acc);border-radius:10px;padding:14px 18px;margin-bottom:24px}
+  .step{margin:34px 0;animation:in .4s ease}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .step h2{font-size:1.5rem;margin:0 0 .3em;display:flex;gap:10px;align-items:center}
+  .num{flex:none;width:34px;height:34px;border-radius:50%;background:var(--orange);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700}
+  .content p{margin:.5em 0}
+  code,pre{font-family:"Courier New",monospace}
+  code{background:var(--gray);padding:1px 5px;border-radius:4px;color:var(--blue);font-weight:700;font-size:.92em}
+  pre{background:var(--lblue);border:1px solid var(--acc);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:.8em 0;color:var(--blue);font-weight:700;font-size:.9rem;line-height:1.45}
+  .merke{background:var(--cream);border:1.5px solid var(--gold);border-radius:10px;padding:10px 16px;margin:1em 0}
+  .merke b{color:var(--goldd)}
+  .diagram{background:var(--gray);border-radius:10px;padding:14px 16px;margin:1em 0}
+  .cap{font-size:.8rem;color:var(--muted);margin:2px 0 8px}
+  .lane{display:flex;gap:3px;margin:4px 0;align-items:center}
+  .lane .l{width:74px;flex:none;font-weight:700;font-size:.85rem}
+  .blk{padding:5px 10px;border:1.5px solid var(--gold);background:var(--cream);border-radius:6px;font-weight:700;font-size:.82rem;text-align:center;white-space:nowrap}
+  .blk.b{background:#fff;border-color:var(--acc)}.blk.g{background:var(--gray);border-color:var(--muted)}
+  .blk.w{background:#fff;border:1.5px dashed var(--muted);color:var(--muted);font-weight:400}
+  .blk.grow{flex:1}
+  .proc{border:2px dashed var(--acc);border-radius:10px;padding:12px;background:#fff}
+  .proc .row{display:flex;gap:8px;flex-wrap:wrap}
+  .proc .th{flex:1;min-width:120px}
+  .proc .th small{display:block;font-weight:400;color:var(--muted)}
+  .heap{margin-top:8px;background:var(--lblue);border:1.5px solid var(--acc);border-radius:6px;padding:7px;text-align:center;font-weight:700;color:var(--blue)}
+  table.t{border-collapse:collapse;width:100%;margin:.8em 0;font-size:.95rem}
+  table.t th{background:var(--blue);color:#fff;padding:6px 8px}
+  table.t td{border:1px solid #c9d3e6;padding:6px 8px;text-align:center}
+  table.t td.hl{background:var(--cream);font-weight:700}
+  .spd{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:.85rem}
+  .spd span:first-child{width:70px;flex:none}.spd .b{height:16px;background:var(--acc);border-radius:3px}
+  .spd span:last-child{font-weight:700}
+  .q{background:var(--lblue);border:1px solid var(--acc);border-radius:12px;padding:16px 18px;margin-top:18px}
+  .qtag{display:inline-block;background:var(--blue);color:#fff;border-radius:12px;padding:1px 10px;font-size:.78rem;font-weight:700;margin-bottom:6px}
+  .qp{font-weight:700;margin:0 0 10px}
+  .opt{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1.5px solid #c9d3e6;border-radius:8px;padding:9px 12px;margin:7px 0;cursor:pointer}
+  .opt:hover{border-color:var(--acc)}
+  .opt input{margin-top:5px}
+  .opt.ok{border-color:var(--ok);background:var(--okbg)}.opt.bad{border-color:var(--bad);background:var(--badbg)}
+  .q.done .opt{cursor:default}
+  .mrow{display:flex;gap:10px;align-items:center;background:#fff;border:1.5px solid #c9d3e6;border-radius:8px;padding:8px 12px;margin:7px 0;flex-wrap:wrap}
+  .mrow .mt{flex:1 1 280px}
+  select,input[type=text],textarea{font:inherit;padding:7px 9px;border:1.5px solid #9fb3d6;border-radius:7px;background:#fff;max-width:100%}
+  textarea{width:100%;min-height:90px}
+  input[type=text]{width:140px}
+  .mrow.ok{border-color:var(--ok);background:var(--okbg)}.mrow.bad{border-color:var(--bad);background:var(--badbg)}
+  .ord{display:flex;gap:8px;align-items:center;background:#fff;border:1.5px solid #c9d3e6;border-radius:8px;padding:6px 10px;margin:6px 0}
+  .ord code{flex:1;background:none;font-size:.95rem}
+  .ord.ok{border-color:var(--ok);background:var(--okbg)}.ord.bad{border-color:var(--bad);background:var(--badbg)}
+  .ord button{padding:2px 10px}
+  button{font:inherit;cursor:pointer}
+  .btn{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:9px 18px;font-weight:700;margin-top:8px}
+  .btn:hover{background:var(--acc)}.btn.sec{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+  .btn:disabled{opacity:.45;cursor:default}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .ord button{background:#fff;border:1.5px solid var(--acc);color:var(--acc);border-radius:6px;font-weight:700}
+  .fb{margin-top:12px;border-radius:8px;padding:10px 14px;display:none}
+  .fb.ok{display:block;background:var(--okbg);border:1.5px solid var(--ok)}
+  .fb.bad{display:block;background:var(--badbg);border:1.5px solid var(--bad)}
+  .fb.info{display:block;background:var(--cream);border:1.5px solid var(--gold)}
+  .fb b.t{display:block;margin-bottom:2px}
+  .next{margin-top:16px}
+  .result{background:var(--cream);border:1.5px solid var(--gold);border-radius:12px;padding:20px 24px;margin:34px 0;text-align:center}
+  .result .score{font-size:2.4rem;font-weight:700;color:var(--blue)}
+  .three{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px;text-align:left}
+  .three div{background:#fff;border:1.5px solid var(--gold);border-radius:10px;padding:12px 14px}
+  .three b{display:block;margin-bottom:4px}
+  @media print{header,.next,.btns{display:none}.step{animation:none}}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="htop"><b>SEW – 4AHIT | Multithreading 1</b><span id="pt">Schritt 0 von 9</span><button class="btn sec" id="revealAll" style="margin:0;padding:4px 12px;font-size:.85rem">Alles aufdecken</button></div>
+  <div class="bar"><i id="pb"></i></div>
+</div></header>
+<main>
+  <h1>Grundlagen und erste Threads</h1>
+  <p class="lead">Interaktives Arbeitsblatt zur Theorie-Einheit</p>
+  <div class="intro">
+    <b>So funktioniert das Arbeitsblatt:</b> Du liest einen kurzen Abschnitt und beantwortest dann eine Frage dazu.
+    Erst nach der Auflösung geht es mit dem nächsten Abschnitt weiter. Bei einer falschen Antwort darfst du es noch einmal versuchen.
+  </div>
+  <div id="steps"></div>
+  <div id="end"></div>
+</main>
+
+<script>
+"use strict";
+/* ---------- Inhalte ---------- */
+const STEPS = [
+{
+  title: "Drei Begriffe, die man trennen muss",
+  html: `
+  <p>Diese drei Begriffe werden oft verwechselt, beschreiben aber verschiedene Dinge:</p>
+  <p><b>Nebenläufigkeit:</b> Mehrere Aufgaben sind gleichzeitig „in Arbeit“. Auf einem Kern wechseln sie sich ab. Es geht um die <i>Struktur</i> des Programms.</p>
+  <p><b>Parallelität:</b> Mehrere Aufgaben laufen wirklich im selben Moment. Dafür braucht man mehrere Kerne. Es geht um die <i>Ausführung</i>.</p>
+  <p><b>Asynchronität:</b> Ein Aufruf blockiert beim Warten nicht. Währenddessen kann derselbe Thread andere Arbeit erledigen.</p>
+  <div class="diagram">
+    <div class="cap">Nebenläufig: 1 Kern, abwechselnd</div>
+    <div class="lane"><span class="blk">A</span><span class="blk b">B</span><span class="blk">A</span><span class="blk b">B</span></div>
+    <div class="cap" style="margin-top:10px">Parallel: 2 Kerne, gleichzeitig</div>
+    <div class="lane"><span class="blk grow">A</span></div><div class="lane"><span class="blk b grow">B</span></div>
+    <div class="cap" style="margin-top:10px">Asynchron: Wartezeit wird für andere Arbeit genutzt</div>
+    <div class="lane"><span class="blk">Anfrage</span><span class="blk w">wartet …</span><span class="blk">Antwort</span></div>
+    <div class="lane"><span class="blk" style="visibility:hidden">Anfrage</span><span class="blk b">andere Arbeit</span></div>
+  </div>`,
+  q: { type: "match", tag: "Zuordnung",
+    prompt: "Ordne jede Beschreibung dem passenden Begriff zu.",
+    items: [
+      { t: "Zwei Aufgaben laufen auf zwei Kernen im selben Moment.", a: "Parallelität" },
+      { t: "Ein Aufruf wartet nicht blockierend auf sein Ergebnis.", a: "Asynchronität" },
+      { t: "Zwei Aufgaben sind gleichzeitig in Arbeit und wechseln sich auf einem Kern ab.", a: "Nebenläufigkeit" }
+    ],
+    choices: ["Nebenläufigkeit", "Parallelität", "Asynchronität"],
+    explain: "Nebenläufigkeit beschreibt die Struktur, Parallelität die gleichzeitige Ausführung auf mehreren Kernen und Asynchronität das Nicht-Blockieren beim Warten." }
+},
+{
+  title: "Prozess und Thread",
+  html: `
+  <p>Ein <b>Prozess</b> ist ein laufendes Programm mit eigenem, abgeschottetem Speicher. Ein <b>Thread</b> ist ein Ausführungsstrang innerhalb eines Prozesses.</p>
+  <p>Jeder Thread hat einen eigenen Stack (lokale Variablen, Aufrufe) und einen eigenen Befehlszähler. Der Heap wird von allen Threads des Prozesses geteilt.</p>
+  <div class="diagram"><div class="proc">
+    <div class="cap" style="color:var(--acc);font-weight:700">Prozess (eigener Speicherbereich)</div>
+    <div class="row">
+      <div class="blk th">Thread 1<small>eigener Stack</small><small>eigener Befehlszähler</small></div>
+      <div class="blk th">Thread 2<small>eigener Stack</small><small>eigener Befehlszähler</small></div>
+      <div class="blk th">Thread 3<small>eigener Stack</small><small>eigener Befehlszähler</small></div>
+    </div>
+    <div class="heap">Gemeinsamer Heap: Objekte und statische Felder</div>
+  </div></div>
+  <div class="merke"><b>Merke:</b> Gemeinsamer Speicher ist Chance und Risiko zugleich. Threads tauschen Daten leicht aus, können sich aber auch gegenseitig stören.</div>`,
+  q: { type: "multi", tag: "Mehrfachauswahl",
+    prompt: "Was teilen sich alle Threads eines Prozesses? (mehrere möglich)",
+    options: [
+      { t: "Den Stack", ok: false },
+      { t: "Den Heap", ok: true },
+      { t: "Statische Felder", ok: true },
+      { t: "Den Befehlszähler", ok: false }
+    ],
+    explain: "Alle Threads eines Prozesses greifen auf denselben Heap zu, und dort liegen auch die statischen Felder. Stack und Befehlszähler gehören jedem Thread allein." }
+},
+{
+  title: "Scheduler und Kontextwechsel",
+  html: `
+  <p>Auf einem Kern läuft immer nur ein Thread. Der <b>Scheduler</b> des Betriebssystems gibt jedem Thread eine Zeitscheibe von wenigen Millisekunden und schaltet dann um. Dabei werden Register und Zustand gesichert: ein <b>Kontextwechsel</b>, der Zeit kostet.</p>
+  <div class="diagram">
+    <div class="cap">1 Kern, 3 Threads: Zeitscheiben mit Kontextwechsel dazwischen</div>
+    <div class="lane"><span class="l">1 Kern</span><span class="blk">T1</span><span class="blk b">T2</span><span class="blk g">T3</span><span class="blk">T1</span><span class="blk b">T2</span><span class="blk g">T3</span></div>
+    <div class="cap" style="margin-top:10px">2 Kerne, 3 Threads: Nur zwei laufen gleichzeitig, der dritte wartet – auch hier wechseln die Kerne zwischen den Threads.</div>
+    <div class="lane"><span class="l">Kern 1</span><span class="blk">T1</span><span class="blk b">T2</span><span class="blk g">T3</span><span class="blk">T1</span><span class="blk b">T2</span><span class="blk g">T3</span></div>
+    <div class="lane"><span class="l">Kern 2</span><span class="blk b">T2</span><span class="blk g">T3</span><span class="blk">T1</span><span class="blk b">T2</span><span class="blk g">T3</span><span class="blk">T1</span></div>
+  </div>
+  <div class="merke"><b>Merke:</b> Der Scheduler entscheidet, welcher Thread wann und wie lange läuft. Gibt es mehr Threads als Kerne, gibt es auch bei mehreren Kernen Kontextwechsel. Die Reihenfolge ist nicht vorhersagbar.</div>`,
+  q: { type: "mc", tag: "Multiple Choice",
+    prompt: "Dein Programm startet erst Thread A und dann Thread B. Was ist garantiert?",
+    options: [
+      { t: "A beginnt immer vor B zu arbeiten.", ok: false },
+      { t: "A ist immer vor B fertig.", ok: false },
+      { t: "Über die Reihenfolge der Ausführung ist nichts garantiert.", ok: true },
+      { t: "B wartet automatisch, bis A fertig ist.", ok: false }
+    ],
+    explain: "Start() reiht den Thread nur beim Scheduler ein. Wann er tatsächlich Rechenzeit bekommt, entscheidet das Betriebssystem. Darauf darf sich ein Programm nie verlassen." }
+},
+{
+  title: "Warum Multithreading? Nutzen und Grenzen",
+  html: `
+  <p>Threads bringen drei Vorteile: <b>reaktionsfähige Oberflächen</b>, <b>Nutzung mehrerer Kerne</b> und <b>Überbrücken von Wartezeiten</b>.</p>
+  <p>Mehr Threads machen ein Programm aber nicht automatisch schneller. <b>Amdahls Gesetz</b> beschreibt die Grenze. Ist <code>p</code> der parallelisierbare Anteil und <code>n</code> die Zahl der Kerne, gilt:</p>
+  <pre>S = 1 / ((1 - p) + p / n)</pre>
+  <p>Beispiel mit p = 0,9 (90 % parallelisierbar):</p>
+  <div class="diagram">
+    <div class="spd"><span>1 Kern</span><div class="b" style="width:2%"></div><span>1,0</span></div>
+    <div class="spd"><span>2 Kerne</span><div class="b" style="width:18%"></div><span>1,8</span></div>
+    <div class="spd"><span>4 Kerne</span><div class="b" style="width:31%"></div><span>3,1</span></div>
+    <div class="spd"><span>8 Kerne</span><div class="b" style="width:47%"></div><span>4,7</span></div>
+    <div class="spd"><span>16 Kerne</span><div class="b" style="width:64%"></div><span>6,4</span></div>
+    <div class="spd"><span>unendlich</span><div class="b" style="width:100%"></div><span>10,0</span></div>
+  </div>
+  <div class="merke"><b>Merke:</b> Der serielle Anteil (hier 10 %) begrenzt den Gewinn: Mit unendlich vielen Kernen wird es höchstens 1 / (1 − p) = 10-mal schneller.</div>`,
+  q: { type: "text", tag: "Freitext (Zahl)",
+    prompt: "Ein Programm ist zu 50 % parallelisierbar (p = 0,5). Um welchen Faktor kann es mit unendlich vielen Kernen höchstens schneller werden?",
+    short: true,
+    check: (v) => /^\s*(2|2[,.]0+|zwei)\s*(x|-?fach|mal)?\s*$/i.test(v),
+    model: "2 (zweifach)",
+    explain: "Mit n → unendlich bleibt S = 1 / (1 − p) = 1 / 0,5 = 2. Die nicht parallelisierbare Hälfte begrenzt den Gewinn." }
+},
+{
+  title: "Der erste Thread: Start und Join",
+  html: `
+  <p>Ein <code>Thread</code>-Objekt beschreibt die Arbeit. Erst <code>Start()</code> lässt sie in einem neuen Ausführungsstrang laufen. <code>Join()</code> wartet, bis der Thread fertig ist.</p>
+  <pre>Thread t = new Thread(Arbeit);
+t.Start();
+Console.WriteLine("Main läuft weiter");
+t.Join();</pre>
+  <div class="diagram">
+    <div class="lane"><span class="l">Main</span><span class="blk">Start()</span><span class="blk">arbeitet weiter</span><span class="blk w">Join(): wartet</span><span class="blk">danach weiter</span></div>
+    <div class="lane"><span class="l">Thread t</span><span class="blk" style="visibility:hidden">Start()</span><span class="blk b" style="flex:0 0 330px">Arbeit()</span></div>
+  </div>
+  <div class="merke"><b>Achtung:</b> Arbeit() direkt aufzurufen startet keinen Thread. Start() kehrt sofort zurück, Main läuft parallel weiter.</div>`,
+  q: { type: "order", tag: "Reihenfolge",
+    prompt: "Bring die Zeilen in die richtige Reihenfolge. Die Ausgabe im Hauptprogramm soll parallel zum neuen Thread laufen, und Main soll erst danach auf das Ende des Threads warten.",
+    items: ["Thread t = new Thread(Arbeit);", "t.Start();", "Console.WriteLine(\"Main läuft weiter\");", "t.Join();"],
+    explain: "Erst das Thread-Objekt erzeugen, dann starten. Die Zeile mit Console.WriteLine steht nach Start() und läuft damit parallel zu Arbeit(). Zuletzt wartet Join() auf das Ende des Threads." }
+},
+{
+  title: "Vordergrund- und Hintergrundthreads",
+  html: `
+  <p>Die Eigenschaft <code>IsBackground</code> entscheidet, ob der Prozess auf einen Thread wartet.</p>
+  <p><b>Vordergrund-Thread</b> (Standard, <code>IsBackground = false</code>): Der Prozess läuft, bis alle Vordergrund-Threads fertig sind.</p>
+  <p><b>Hintergrund-Thread</b> (<code>IsBackground = true</code>): Wird beim Prozessende sofort beendet, auch mitten in der Arbeit.</p>
+  <div class="diagram">
+    <div class="cap">Vordergrund: Thread darf zu Ende arbeiten</div>
+    <div class="lane"><span class="l">Main</span><span class="blk" style="flex:0 0 130px">Main</span><span class="cap" style="color:var(--orange);margin:0">← Main endet</span></div>
+    <div class="lane"><span class="l">Thread</span><span class="blk b grow">arbeitet weiter</span></div>
+    <div class="cap" style="margin-top:10px">Hintergrund: Thread wird abgebrochen</div>
+    <div class="lane"><span class="l">Main</span><span class="blk" style="flex:0 0 130px">Main</span><span class="cap" style="color:var(--orange);margin:0">← Main endet</span></div>
+    <div class="lane"><span class="l">Thread</span><span class="blk b" style="flex:0 0 130px">Thread</span><span class="cap" style="color:var(--orange);margin:0;font-weight:700">✕ abgebrochen</span></div>
+  </div>`,
+  q: { type: "mc", tag: "Multiple Choice",
+    prompt: "Main ist fertig, ein Hintergrund-Thread (IsBackground = true) arbeitet noch. Was passiert?",
+    options: [
+      { t: "Der Prozess wartet, bis der Thread fertig ist.", ok: false },
+      { t: "Der Prozess endet, der Thread wird mittendrin abgebrochen.", ok: true },
+      { t: "Der Thread wird automatisch ein Vordergrund-Thread.", ok: false },
+      { t: "Das Programm stürzt mit einer Ausnahme ab.", ok: false }
+    ],
+    explain: "Hintergrund-Threads halten den Prozess nicht am Leben. Wer abwarten muss, bis die Arbeit fertig ist, nutzt einen Vordergrund-Thread oder Join()." }
+},
+{
+  title: "Daten an Threads übergeben",
+  html: `
+  <p>Lambda-Ausdrücke sind praktisch, um Daten an Threads zu geben. Aber Vorsicht bei der Schleifenvariable: In einer <code>for</code>-Schleife gibt es nur <b>eine</b> Variable <code>i</code> für alle Durchläufe.</p>
+  <pre>for (int i = 0; i &lt; 3; i++)
+    new Thread(() =&gt; Console.WriteLine(i)).Start();
+// z. B. 3 3 3 – nicht vorhersagbar</pre>
+  <p>Alle Lambdas greifen auf dieselbe Variable zu und lesen sie erst, wenn der Thread tatsächlich läuft. Dann hat die Schleife oft schon weitergezählt.</p>
+  <p>Die Lösung ist eine lokale Kopie pro Durchlauf:</p>
+  <pre>for (int i = 0; i &lt; 3; i++)
+{
+    int kopie = i;
+    new Thread(() =&gt; Console.WriteLine(kopie)).Start();
+}</pre>
+  <div class="merke"><b>Gut zu wissen:</b> Alternativ übergibt man den Wert direkt mit <code>t.Start(wert)</code>. Mit <code>t.Name</code> bekommt ein Thread einen Namen für das Debugging. <code>[ThreadStatic]</code> gibt jedem Thread eine eigene Kopie eines statischen Felds.</div>`,
+  q: { type: "mc", tag: "Multiple Choice",
+    prompt: "Welche Änderung behebt das Problem mit der Schleifenvariable?",
+    options: [
+      { t: "Die Priorität der Threads erhöhen.", ok: false },
+      { t: "In jedem Durchlauf eine lokale Kopie anlegen und im Lambda verwenden.", ok: true },
+      { t: "Die Schleife mit while statt for schreiben und i weiter im Lambda verwenden.", ok: false },
+      { t: "Nach jedem Start() ein Console.WriteLine(i) im Hauptthread einfügen.", ok: false }
+    ],
+    explain: "Jeder Durchlauf bekommt mit int kopie = i; seine eigene Variable. Das Lambda greift dann auf diese Kopie zu und nicht mehr auf die gemeinsame Schleifenvariable." }
+},
+{
+  title: "Ausnahmen in Threads",
+  html: `
+  <p>Ein <code>try-catch</code> um <code>Start()</code> fängt <b>keine</b> Fehler, die im Thread entstehen. Die Ausnahme tritt in einem anderen Thread auf, der <code>try</code>-Block ist längst verlassen.</p>
+  <pre>// Falsch
+try { new Thread(Arbeit).Start(); }
+catch (Exception ex) { }   // fängt nichts
+
+// Richtig
+void Arbeit()
+{
+    try { /* Arbeit */ }
+    catch (Exception ex) { /* behandeln */ }
+}</pre>
+  <div class="merke"><b>Merke:</b> Eine unbehandelte Ausnahme in irgendeinem Thread beendet den gesamten Prozess. Darum fängt jeder Thread seine Ausnahmen selbst.</div>`,
+  q: { type: "multi", tag: "Mehrfachauswahl",
+    prompt: "Welche Aussagen sind richtig? (mehrere möglich)",
+    options: [
+      { t: "Eine unbehandelte Ausnahme im Thread kann den ganzen Prozess beenden.", ok: true },
+      { t: "Ein try-catch um Start() fängt auch Fehler aus dem Thread.", ok: false },
+      { t: "Der Fehler tritt im neuen Thread auf, nicht dort, wo Start() aufgerufen wurde.", ok: true },
+      { t: "Der Thread wird nach einer Ausnahme automatisch neu gestartet.", ok: false }
+    ],
+    explain: "Fehlerbehandlung gehört in den Thread-Code selbst. Der try-Block um Start() ist beim Auftreten der Ausnahme längst beendet. Neu gestartet wird nichts." }
+},
+{
+  title: "Das Problem: gemeinsamer Zustand",
+  html: `
+  <p>Zwei Threads erhöhen denselben Zähler mit <code>counter++</code>. Das sieht nach einem Schritt aus, besteht aber aus drei: lesen, erhöhen, schreiben. Dazwischen kann der Scheduler wechseln:</p>
+  <table class="t">
+    <tr><th>Schritt</th><th>Thread 1</th><th>Thread 2</th><th>counter</th></tr>
+    <tr><td>1</td><td>liest counter (0)</td><td></td><td>0</td></tr>
+    <tr><td>2</td><td></td><td>liest counter (0)</td><td>0</td></tr>
+    <tr><td>3</td><td>schreibt 0 + 1</td><td></td><td class="hl">1</td></tr>
+    <tr><td>4</td><td></td><td>schreibt 0 + 1</td><td class="hl">1</td></tr>
+  </table>
+  <p><b>Erwartet: 2 – tatsächlich: 1.</b> Ein Update geht verloren. In der Übung zählt jeder Thread 100 000-mal: Erwartet wird 200 000, das Ergebnis ist meist kleiner und bei jedem Lauf anders.</p>
+  <div class="merke"><b>Ausblick:</b> In Einheit 2 lösen wir das Problem mit <code>lock</code>.</div>`,
+  q: { type: "text", tag: "Freitext",
+    prompt: "Zwei Threads zählen einen gemeinsamen Zähler je 100 000-mal mit counter++ hoch. Warum ist das Ergebnis meist kleiner als 200 000? Erkläre in ein bis zwei Sätzen.",
+    short: false,
+    check: (v) => /atomar|überschr|verloren|gleichzeitig|lesen|schreib|zwischen|race|wechsel|scheduler|threadsicher|nicht sicher|dazwischen/i.test(v) && v.trim().length > 25,
+    model: "counter++ ist nicht atomar: Es besteht aus Lesen, Erhöhen und Schreiben. Wechselt der Scheduler dazwischen, lesen beide Threads denselben Wert und überschreiben sich gegenseitig – ein Update geht verloren (Race Condition).",
+    explain: "Das Ergebnis hängt vom zufälligen Zeitpunkt der Thread-Wechsel ab. Solche Fehler heißen Race Conditions." }
+}
+];
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+function shuffle(a, avoidSame) {
+  const b = a.slice();
+  do { for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } }
+  while (avoidSame && b.every((x, i) => x === a[i]));
+  return b;
+}
+let current = 0, firstTry = 0, revealAllMode = false, shown = 0;
+const qs = [];
+const total = STEPS.length;
+function progress(n) { $("#pt").textContent = "Schritt " + n + " von " + total; $("#pb").style.width = (n / total * 100) + "%"; }
+
+/* ---------- Fragetypen ---------- */
+function buildQuestion(q, host, onDone) {
+  let attempts = 0;
+  const box = el("div", "q");
+  box.appendChild(el("span", "qtag", q.tag));
+  box.appendChild(el("p", "qp", esc(q.prompt)));
+  const body = el("div"); box.appendChild(body);
+  const fb = el("div", "fb");
+  const btns = el("div", "btns");
+  const check = el("button", "btn", "Prüfen");
+  btns.appendChild(check); box.appendChild(btns); box.appendChild(fb);
+
+  let api; // { read(), ready(), mark(done), lock() }
+  if (q.type === "mc" || q.type === "multi") {
+    const multi = q.type === "multi", name = "q" + Math.random().toString(36).slice(2);
+    const opts = shuffle(q.options, false).map((o) => {
+      const lab = el("label", "opt");
+      const inp = el("input"); inp.type = multi ? "checkbox" : "radio"; inp.name = name;
+      lab.appendChild(inp); lab.appendChild(el("span", null, esc(o.t))); body.appendChild(lab);
+      return { o, lab, inp };
+    });
+    api = {
+      ready: () => opts.some((x) => x.inp.checked),
+      correct: () => opts.every((x) => x.inp.checked === x.o.ok),
+      mark: (reveal) => opts.forEach((x) => {
+        x.lab.classList.remove("ok", "bad");
+        if (x.inp.checked) x.lab.classList.add(x.o.ok ? "ok" : "bad");
+        else if (reveal && x.o.ok) x.lab.classList.add("ok");
+      }),
+      lock: () => opts.forEach((x) => (x.inp.disabled = true)),
+    };
+    if (multi) body.insertBefore(el("div", "cap", "Wähle alle zutreffenden Aussagen aus."), body.firstChild);
+  } else if (q.type === "match") {
+    const rows = q.items.map((it) => {
+      const row = el("div", "mrow"); row.appendChild(el("span", "mt", esc(it.t)));
+      const sel = el("select"); sel.appendChild(new Option("– wählen –", ""));
+      shuffle(q.choices, false).forEach((c) => sel.appendChild(new Option(c, c)));
+      row.appendChild(sel); body.appendChild(row); return { it, row, sel };
+    });
+    api = {
+      ready: () => rows.every((r) => r.sel.value),
+      correct: () => rows.every((r) => r.sel.value === r.it.a),
+      mark: (reveal) => rows.forEach((r) => {
+        r.row.classList.remove("ok", "bad");
+        r.row.classList.add(r.sel.value === r.it.a ? "ok" : "bad");
+        if (reveal && r.sel.value !== r.it.a) { r.sel.value = r.it.a; r.row.classList.remove("bad"); r.row.classList.add("ok"); }
+      }),
+      lock: () => rows.forEach((r) => (r.sel.disabled = true)),
+    };
+  } else if (q.type === "order") {
+    let list = shuffle(q.items, true);
+    const wrap = el("div"); body.appendChild(wrap);
+    const draw = () => {
+      wrap.innerHTML = "";
+      list.forEach((t, i) => {
+        const r = el("div", "ord"); r.appendChild(el("code", null, esc(t)));
+        const up = el("button", null, "↑"), dn = el("button", null, "↓");
+        up.disabled = i === 0; dn.disabled = i === list.length - 1;
+        up.onclick = () => { [list[i - 1], list[i]] = [list[i], list[i - 1]]; draw(); };
+        dn.onclick = () => { [list[i + 1], list[i]] = [list[i], list[i + 1]]; draw(); };
+        if (api && api.locked) { up.disabled = dn.disabled = true; }
+        r.appendChild(up); r.appendChild(dn); wrap.appendChild(r);
+      });
+    };
+    api = {
+      locked: false,
+      ready: () => true,
+      correct: () => list.every((t, i) => t === q.items[i]),
+      mark: (reveal) => {
+        if (reveal) list = q.items.slice();
+        draw();
+        [...wrap.children].forEach((r, i) => r.classList.add(list[i] === q.items[i] ? "ok" : "bad"));
+      },
+      lock: () => { api.locked = true; draw(); [...wrap.children].forEach((r, i) => r.classList.add(list[i] === q.items[i] ? "ok" : "bad")); },
+    };
+    draw();
+  } else if (q.type === "text") {
+    const inp = q.short ? el("input") : el("textarea");
+    if (q.short) inp.type = "text"; else inp.placeholder = "Deine Antwort …";
+    body.appendChild(inp);
+    api = {
+      ready: () => inp.value.trim().length > 0,
+      correct: () => q.check(inp.value),
+      mark: () => {},
+      lock: () => (inp.disabled = true),
+      text: true,
+    };
+  }
+
+  const finish = (ok, revealed) => {
+    api.mark(revealed); api.lock(); check.disabled = true; btns.innerHTML = "";
+    if (ok && attempts === 1) firstTry++;
+    fb.className = "fb " + (ok ? "ok" : "info");
+    let h = ok ? "<b class='t'>✔ Richtig!</b>" : "<b class='t'>Auflösung</b>";
+    if (q.model) h += "<div><b>Musterantwort:</b> " + esc(q.model) + "</div>";
+    h += "<div>" + esc(q.explain) + "</div>";
+    fb.innerHTML = h;
+    box.classList.add("done");
+    onDone();
+  };
+  check.onclick = () => {
+    if (!api.ready()) { fb.className = "fb info"; fb.innerHTML = "Bitte zuerst eine Antwort wählen oder eingeben."; return; }
+    attempts++;
+    const ok = api.correct();
+    if (ok) return finish(true, false);
+    if (attempts >= 2) return finish(false, true);
+    api.mark(false);
+    fb.className = "fb bad";
+    fb.innerHTML = q.type === "text"
+      ? "<b class='t'>Noch nicht ganz.</b> Lies den Abschnitt noch einmal und formuliere deine Antwort um. Ein zweiter Versuch ist erlaubt."
+      : "<b class='t'>Nicht ganz.</b> Lies den Abschnitt noch einmal und versuche es ein zweites Mal.";
+  };
+  const reveal = el("button", "btn sec", "Lösung anzeigen");
+  reveal.onclick = () => { attempts = Math.max(attempts, 2); finish(false, true); };
+  btns.appendChild(reveal);
+  host.appendChild(box);
+  return { reveal: () => { if (!box.classList.contains("done")) { attempts = Math.max(attempts, 2); finish(false, true); } } };
+}
+
+/* ---------- Ablauf ---------- */
+function showStep(i) {
+  const st = STEPS[i]; shown = i + 1;
+  const sec = el("section", "step");
+  sec.innerHTML = `<h2><span class="num">${i + 1}</span>${esc(st.title)}</h2><div class="content">${st.html}</div>`;
+  $("#steps").appendChild(sec);
+  progress(i);
+  qs[i] = buildQuestion(st.q, sec, () => {
+    progress(i + 1);
+    if (revealAllMode) return;
+    const nx = el("div", "next");
+    const b = el("button", "btn", i + 1 < total ? "Weiter ▸" : "Fertig – Ergebnis anzeigen");
+    b.onclick = () => { b.disabled = true; b.remove(); i + 1 < total ? showStep(i + 1) : showEnd(); };
+    nx.appendChild(b); sec.appendChild(nx);
+    b.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+  if (i > 0 && !revealAllMode) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function showEnd() {
+  const e = $("#end");
+  e.innerHTML = `<div class="result">
+    ${revealAllMode ? '<div class="score" style="font-size:1.5rem">Alle Lösungen sind aufgedeckt</div>' : `<div>Geschafft! Beim ersten Versuch richtig:</div>
+    <div class="score">${firstTry} von ${total}</div>`}
+    <div class="three">
+      <div><b>1  Nebenläufig ≠ parallel</b>Struktur, gleichzeitige Ausführung und Nicht-Blockieren sind drei verschiedene Dinge.</div>
+      <div><b>2  Start() startet, Join() wartet</b>Erst Start() erzeugt den Ausführungsstrang, Join() wartet auf sein Ende.</div>
+      <div><b>3  Geteilte Daten brauchen Schutz</b>Ändern mehrere Threads dieselben Daten, entstehen Race Conditions – Thema der nächsten Einheit.</div>
+    </div>
+    <div class="btns" style="justify-content:center;margin-top:16px"><button class="btn" id="again">Noch einmal von vorn</button></div>
+  </div>`;
+  $("#again").onclick = () => { $("#steps").innerHTML = ""; e.innerHTML = ""; firstTry = 0; revealAllMode = false; shown = 0; qs.length = 0; $("#revealAll").disabled = false; $("#revealAll").textContent = "Alles aufdecken"; window.scrollTo({ top: 0, behavior: "smooth" }); progress(0); showStep(0); };
+  e.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("#revealAll").onclick = () => {
+  revealAllMode = true;
+  document.querySelectorAll(".next").forEach((n) => n.remove());
+  for (let i = shown; i < total; i++) showStep(i);
+  qs.forEach((q) => q.reveal());
+  progress(total);
+  showEnd();
+  const b = $("#revealAll"); b.disabled = true; b.textContent = "Alles aufgedeckt";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+progress(0);
+showStep(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="Hilfe/Hilfe.csproj" />
+  <Project Path="Aufgabe1_Grundlagen/Aufgabe1_Grundlagen.csproj" />
+  <Project Path="Aufgabe2_Listen/Aufgabe2_Listen.csproj" />
+  <Project Path="Aufgabe3_Linq/Aufgabe3_Linq.csproj" />
+  <Project Path="Aufgabe4_Closures/Aufgabe4_Closures.csproj" />
+  <Project Path="Aufgabe5_EigeneMethoden/Aufgabe5_EigeneMethoden.csproj" />
+  <Project Path="Aufgabe6_Events/Aufgabe6_Events.csproj" />
+  <Project Path="Aufgabe7_Abschluss/Aufgabe7_Abschluss.csproj" />
+</Solution>
